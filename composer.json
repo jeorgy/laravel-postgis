@@ -1,5 +1,5 @@
 {
-  "name": "digitalcloud/laravel-postgis",
+  "name": "jeorgy/laravel-postgis",
   "description": "",
   "keywords": [
     "laravel",
@@ -15,8 +15,8 @@
   "license": "MIT",
   "authors": [
     {
-      "name": "Yassir Awad",
-      "email": "yassir.awad@dce.sa"
+      "name": "Jeorgy Ramalho",
+      "email": "jeorgyramalho@gmail.com"
     }
   ],
   "require": {
@@ -28,7 +28,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Digitalcloud\\Postgis\\": "src/"
+      "Jeorgy\\LaravelPostgis\\": "src/"
     }
   },
   "autoload-dev": {

@@ -1,5 +1,5 @@
 # Laravel PostGIS
-This package implemented for calculate or check the distance between point and other database points.
+This package implemented for calculate or check the distance between point and other database points, and this is a fork of [DigitalCloud Laravel-Posgis](https://github.com/DigitalCloud/laravel-postgis/blob/master/src/Postgis.php).
 
 ## Installation
 
@@ -11,7 +11,7 @@ so if need more details or how to enable postgis extension in php see previous l
 To get the latest version of Laravel PostGIS, simply require the project using [Composer](https://getcomposer.org):
 
 ```bash
-composer require digitalcloud/laravel-postgis
+composer require jeorgy/laravel-postgis
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ composer require digitalcloud/laravel-postgis
 
 namespace App;
 
-use Digitalcloud\Postgis\Postgis;
+use Jeorgy\LaravelPostgis\Postgis;
 use Illuminate\Database\Eloquent\Model;
 
 class UserLocation extends Model

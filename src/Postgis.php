@@ -1,6 +1,6 @@
 <?php
 
-namespace Digitalcloud\Postgis;
+namespace Jeorgy\LaravelPostgis;
 
 use Illuminate\Database\Eloquent\Builder;
 use MStaack\LaravelPostgis\Eloquent\PostgisTrait;
