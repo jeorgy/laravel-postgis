@@ -5,6 +5,7 @@ namespace Jeorgy\LaravelPostgis;
 use Illuminate\Database\Eloquent\Builder;
 use MStaack\LaravelPostgis\Eloquent\PostgisTrait;
 use MStaack\LaravelPostgis\Geometries\Point;
+use MStaack\LaravelPostgis\Geometries\Polygon;
 
 trait Postgis
 {
@@ -70,6 +71,46 @@ trait Postgis
         }
 
         return $query->whereRaw("$q {$operator} {$units}");
+    }
+
+    /**
+     * @param Builder $query
+     * @param Polygon $geoJson
+     * @return Builder
+     */
+    public function scopeWhereCovers(Builder $query, $geoJson)
+    {
+        $classQuery = $query->getQuery();
+
+        if ($classQuery && !$classQuery->columns) {
+            $query->select([$classQuery->from . '.*']);
+        }
+
+        if ($geoJson) {
+            if ($geoJson instanceof Polygon) {
+                $coordinates_array = $geoJson->jsonSerialize();
+            } else {
+                $coordinates_array = '';
+                foreach ($geoJson->geometry->coordinates as $key => $coordinates) {
+                    foreach ($coordinates as $key => $coord) {
+                        $c0 = (string)$coord[0];
+                        $c1 = (string)$coord[1];
+                        if ($key === 0) {
+                            $coordinates_array = "{$c0} {$c1}";
+                        } else {
+                            $coordinates_array = "{$coordinates_array}, {$c0} {$c1}";
+                        }
+                    }
+                }
+            }
+            // dd($coordinates_array);
+
+            $q = "ST_Covers(ST_GeographyFromText('POLYGON(($coordinates_array))'), {$this->getLocationColumn()})";
+        } else {
+            $q = "0";
+        }
+
+        return $query->whereRaw($q);
     }
 
     private function getLocationColumn()
