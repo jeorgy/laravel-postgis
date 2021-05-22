@@ -93,13 +93,25 @@ trait Postgis
                 $coordinates_array = '';
                 foreach ($geoJson->geometry->coordinates as $key => $coordinates) {
                     foreach ($coordinates as $key => $coord) {
-                        $c0 = (string)$coord[0];
-                        $c1 = (string)$coord[1];
-                        if ($key === 0) {
-                            $coordinates_array = "{$c0} {$c1}";
+                        if (!is_array($coord[0])) {
+                            $c0 = (string)$coord[0];
+                            $c1 = (string)$coord[1];
+                            if ($coordinates_array == '') {
+                                $coordinates_array = "{$c0} {$c1}";
+                            } else {
+                                $coordinates_array = "{$coordinates_array}, {$c0} {$c1}";
+                            }
                         } else {
-                            $coordinates_array = "{$coordinates_array}, {$c0} {$c1}";
-                        }
+                            foreach ($coord as $i => $c) {
+                                $c0 = (string)$c[0];
+                                $c1 = (string)$c[1];
+                                if ($coordinates_array == '') {
+                                    $coordinates_array = "{$c0} {$c1}";
+                                } else {
+                                    $coordinates_array = "{$coordinates_array}, {$c0} {$c1}";
+                                }
+                            }
+                        } 
                     }
                 }
             }

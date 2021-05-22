@@ -1,6 +1,8 @@
 # Laravel PostGIS
 This package implemented for calculate or check the distance between point and other database points, and this is a fork of [DigitalCloud Laravel-Posgis](https://github.com/DigitalCloud/laravel-postgis/blob/master/src/Postgis.php).
 
+Implemented function to search for points in a geoJSON polygon: whereCovers
+
 ## Installation
 
 [PHP](https://php.net) >=7.1.3 and [Laravel](http://laravel.com) ^7.x are required.
@@ -58,5 +60,14 @@ check the distance between a point and other points in database
        UserLocation::whereDistance(new Point($atitude,$longitude), ">", 50)
             ->with("user")
             ->whereIn("user_id", $users)
+            ->get();
+```
+
+
+#### 3. whereCovers
+get points inside a geoJSON polygon
+```PHP
+       UserLocation::whereCovers($geoJson)
+            ->with("user")
             ->get();
 ```
