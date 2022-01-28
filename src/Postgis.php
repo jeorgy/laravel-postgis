@@ -75,6 +75,37 @@ trait Postgis
 
     /**
      * @param Builder $query
+     * @param Point $location
+     * @param float $operator
+     * @param float $units
+     * @return Builder
+     */
+    public function scopeOrWhereDistance(Builder $query, $location, $operator, $units)
+    {
+        $classQuery = $query->getQuery();
+
+        if ($classQuery && !$classQuery->columns) {
+            $query->select([$classQuery->from . '.*']);
+        }
+
+        if ($location) {
+            if ($location instanceof Point) {
+                $longitude = $location->getLng();
+                $latitude = $location->getLat();
+            } else {
+                list($latitude, $longitude) = $location;
+            }
+
+            $q = "ST_Distance({$this->getLocationColumn()},ST_Point({$longitude},{$latitude}))";
+        } else {
+            $q = "0";
+        }
+
+        return $query->orWhereRaw("$q {$operator} {$units}");
+    }
+
+    /**
+     * @param Builder $query
      * @param Polygon $geoJson
      * @return Builder
      */
@@ -115,7 +146,6 @@ trait Postgis
                     }
                 }
             }
-            // dd($coordinates_array);
 
             $q = "ST_Covers(ST_GeographyFromText('POLYGON(($coordinates_array))'), {$this->getLocationColumn()})";
         } else {
@@ -123,6 +153,57 @@ trait Postgis
         }
 
         return $query->whereRaw($q);
+    }
+
+    /**
+     * @param Builder $query
+     * @param Polygon $geoJson
+     * @return Builder
+     */
+    public function scopeOrWhereCovers(Builder $query, $geoJson)
+    {
+        $classQuery = $query->getQuery();
+
+        if ($classQuery && !$classQuery->columns) {
+            $query->select([$classQuery->from . '.*']);
+        }
+
+        if ($geoJson) {
+            if ($geoJson instanceof Polygon) {
+                $coordinates_array = $geoJson->jsonSerialize();
+            } else {
+                $coordinates_array = '';
+                foreach ($geoJson->geometry->coordinates as $key => $coordinates) {
+                    foreach ($coordinates as $key => $coord) {
+                        if (!is_array($coord[0])) {
+                            $c0 = (string)$coord[0];
+                            $c1 = (string)$coord[1];
+                            if ($coordinates_array == '') {
+                                $coordinates_array = "{$c0} {$c1}";
+                            } else {
+                                $coordinates_array = "{$coordinates_array}, {$c0} {$c1}";
+                            }
+                        } else {
+                            foreach ($coord as $i => $c) {
+                                $c0 = (string)$c[0];
+                                $c1 = (string)$c[1];
+                                if ($coordinates_array == '') {
+                                    $coordinates_array = "{$c0} {$c1}";
+                                } else {
+                                    $coordinates_array = "{$coordinates_array}, {$c0} {$c1}";
+                                }
+                            }
+                        } 
+                    }
+                }
+            }
+
+            $q = "ST_Covers(ST_GeographyFromText('POLYGON(($coordinates_array))'), {$this->getLocationColumn()})";
+        } else {
+            $q = "0";
+        }
+
+        return $query->orWhereRaw($q);
     }
 
     private function getLocationColumn()
