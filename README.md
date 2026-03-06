@@ -1,73 +1,63 @@
 # Laravel PostGIS
-This package implemented to calculate or check the distance between the point and other points from the database and also retrieve points in an area, be it an arbitrary polygon or a circle, and this is a fork of [DigitalCloud Laravel-Posgis](https://github.com/DigitalCloud/laravel-postgis/blob/master/src/Postgis.php).
+Biblioteca para consultas geoespaciais em Eloquent com PostgreSQL/PostGIS: cálculo de distâncias e filtros por polígonos GeoJSON, com API moderna e tipada.
 
-Implemented function to search for points in a geoJSON polygon: whereCovers
+## Requisitos
+- PHP **>= 8.1**
+- Laravel **^9.0 || ^10.0 || ^11.0**
+- PostgreSQL com extensão **PostGIS** habilitada (`CREATE EXTENSION postgis;`)
 
-## Installation
-
-[PHP](https://php.net) >=7.1.3 and [Laravel](http://laravel.com) ^7.x are required.
-
-the package used [Laravel postgis extension](https://github.com/njbarrett/laravel-postgis) to deal with postgres database points in laravel,
-so if need more details or how to enable postgis extension in php see previous link.
-
-To get the latest version of Laravel PostGIS, simply require the project using [Composer](https://getcomposer.org):
-
+## Instalação
 ```bash
 composer require jeorgy/laravel-postgis
 ```
 
-## Usage
+## Compatibilização em um projeto Laravel
+1. **Habilite PostGIS** na base de dados utilizada pela aplicação.
+2. **Adicione a trait** ao seu modelo que possui a coluna geoespacial.
+3. **Garanta o tipo da coluna** como `geography(Point, 4326)` ou equivalente na migration.
+4. **Opcional**: configure o nome da coluna e a unidade de distância no modelo.
 
-1 . First of all use `Postgis` trait in your model
-```PHP
-<?php
-
-namespace App;
-
-use Jeorgy\LaravelPostgis\Postgis;
+### Exemplo de modelo
+```php
 use Illuminate\Database\Eloquent\Model;
+use Jeorgy\LaravelPostgis\Geometries\Point;
+use Jeorgy\LaravelPostgis\Postgis;
 
-class UserLocation extends Model
+class Place extends Model
 {
     use Postgis;
+
+    // Opcional: coluna personalizada e unidade
+    protected $location = 'geo'; // default: location
+    protected $unit = 'km';      // opções: meter (default), km, mile
 }
 ```
 
-2 . By default package assume that the name of the point column is `location` if you want to change it override `location` variable on your model
-```PHP
-protected $location = "my_column";
+### Escopos disponíveis
+- **withDistance(Point|array|string $location)**: adiciona coluna `distance` à seleção usando `ST_DistanceSphere` (bindings seguros). Arrays/strings aceitam `[lat, lng]` ou `"lat,lng"`.
+- **whereDistance(Point|array $location, string $operator, float|int $units)**: filtro por distância com operador (`<`, `<=`, `>`, `>=`, `=`) e valor em unidades do modelo.
+- **orWhereDistance(Point|array $location, string $operator, float|int $units)**: versão OR do filtro de distância.
+- **whereCovers(Polygon|object $geoJson)** / **orWhereCovers(...)**: filtra registros cobertos por polígono GeoJSON (ou `Polygon` interno), gerando `SRID=4326;POLYGON(...)` com anel fechado.
+
+### Geometrias internas
+- **Point**: `new Point($lat, $lng)`
+- **Polygon**: `new Polygon([ [[$lng, $lat], ...] ])` ou `Polygon::fromGeoJson($geoJsonObject)`
+
+### Exemplos de uso
+```php
+$origin = new Point(10, 20);
+$places = Place::query()
+    ->withDistance($origin)
+    ->whereDistance($origin, '<', 5000)
+    ->get();
+
+$geoJson = json_decode('{"geometry":{"coordinates":[[[30,10],[10,20],[20,40],[40,40],[30,10]]]}}');
+$inside = Place::query()
+    ->whereCovers($geoJson)
+    ->get();
 ```
 
-3 . Also By default package assume that the unit of distance is `meter` if you want to change it override `unit` variable on your model
-```PHP
- protected $unit = "km"; //units avialble [mile, km, meter]
-```
-
-### Functions
-
-#### 1. withDistance
-get the distance between point and other points
-```PHP
-UserLocation::withDistance(new Point($latitude,$longitude))
-            ->with("user")
-            ->whereIn("user_id", $users)
-            ->get();
-```
-
-#### 2. whereDistance and orWhereDistance
-check the distance between a point and other points in database
-```PHP
-       UserLocation::whereDistance(new Point($latitude,$longitude), ">", 50)
-            ->with("user")
-            ->whereIn("user_id", $users)
-            ->get();
-```
-
-
-#### 3. whereCovers and orWhereCovers
-get points inside a geoJSON polygon
-```PHP
-       UserLocation::whereCovers($geoJson)
-            ->with("user")
-            ->get();
+## Testes
+```bash
+vendor/bin/phpunit
 ```
